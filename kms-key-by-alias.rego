@@ -21,6 +21,6 @@ deny[reason] {
   r := s3_buckets_cnf[_]
   s := r.expressions.server_side_encryption_configuration[_]
   kms_key := s.rule.apply_server_side_encryption_by_default[_].kms_master_key_id.references[_]
-  not startswith(kms_key, "data.aws_kms_key.")
+  not startswith(kms_key, "fred.aws_kms_key.")
   reason := "KMS Master key ID not derived from data source!"
 }
