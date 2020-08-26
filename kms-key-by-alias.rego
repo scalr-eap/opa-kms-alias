@@ -17,10 +17,14 @@ s3_buckets_cnf[r] {
     r.type == "aws_s3_bucket"
 }
 
+the_key(expr) = cv {
+  cv := expr.references[_]
+} else = ds {
+  ds := expr.constant_value
+}
+
 deny[reason] {
-  r := s3_buckets_cnf[_]
-  s := r.expressions.server_side_encryption_configuration[_]
-  kms_key := s.rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id.references[_]
+  kms_key := the_key(s3_buckets_cnf[_].expressions.server_side_encryption_configuration[_].rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id)
   not startswith(kms_key, "data.aws_kms_key.")
-  reason := "KMS Master key ID not derived from data source!"
+  reason := sprintf("KMS Master key ID '%s' not derived from data source!",[kms_key])
 }
