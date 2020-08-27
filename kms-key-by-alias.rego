@@ -84,7 +84,7 @@ deny[reason] {
 }
 
 #---------------
-# EBS, RDS
+# GENERAL
 # Search for attributes in the list and check they are referencing data sources
 # This could be done without type[] using the assumption that these attribute name are only used for KMS keys, but A) that is a risk and B) may have performance issue. 
 # This appraoch is more explicit and therefore clearer.
