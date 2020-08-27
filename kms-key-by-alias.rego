@@ -17,7 +17,7 @@ contains(arr, elem) {
 
 # Extract configuration block for given type and mode
 config_type(plan, type, mode) = config {
-  config := plan.configuration.root_module.resources[_]
+  config := plan.configuration.root_module.resources[0]
   config.type == type
   config.mode == mode
 }
@@ -40,17 +40,29 @@ eval_expression(plan, expr) = constant_value {
 }
 
 # Tests for a server side encryption rule referencing a KMS key. This MUST be a data source.
+
 deny[reason] {
-  config := config_type(tfplan,"aws_s3_bucket","managed")
-  kms_key := eval_expression(tfplan, config.expressions.server_side_encryption_configuration[_].rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id)
+  walk(tfplan.configuration.root_module, [path, value])
+  "managed" == value.mode
+  "aws_s3_bucket" == value.type
+  kms_key := eval_expression(tfplan, value.expressions.server_side_encryption_configuration[_].rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id)
   not startswith(kms_key, "data.aws_kms_key.")
   reason := sprintf("KMS Master key ID '%s' not derived from data source!",[kms_key])
 }
 
+#deny[reason] {
+#  config := config_type(tfplan,"aws_s3_bucket","managed")
+#  kms_key := eval_expression(tfplan, config.expressions.server_side_encryption_configuration[_].rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id)
+#  not startswith(kms_key, "data.aws_kms_key.")
+#  reason := sprintf("KMS Master key ID '%s' not derived from data source!",[kms_key])
+#}
+
 # Tests that the key_id used in the data source is in the allowed list.
 deny[reason] {
-  config := config_type(tfplan,"aws_kms_key","data")
-  key_alias := eval_expression(tfplan, config.expressions.key_id)
+  walk(tfplan.configuration.root_module, [path, value])
+  "data" == value.mode
+  "aws_kms_key" == value.type
+  key_alias := eval_expression(tfplan, value.expressions.key_id)
   key_name := trim_prefix(key_alias, "alias/")
   not contains(allowed_kms_keys, key_name)
   reason := sprintf("KMS Master key ID '%s' not not in permitted list",[key_alias])
