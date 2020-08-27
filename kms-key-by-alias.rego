@@ -84,12 +84,13 @@ deny[reason] {
 }
 
 #---------------
-# EBS
+# EBS, RDS
 
 types = [
   "aws_ebs_volume",
   "aws_ebs_default_kms_key",
-  "aws_db_instance"
+  "aws_db_instance",
+  "aws_rds_cluster"
 ]
 
 attributes = [
