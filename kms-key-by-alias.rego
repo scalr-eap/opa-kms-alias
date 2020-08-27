@@ -86,12 +86,12 @@ deny[reason] {
 #---------------
 # EBS, RDS
 
-types = [
-  "aws_ebs_volume",
-  "aws_ebs_default_kms_key",
-  "aws_db_instance",
-  "aws_rds_cluster"
-]
+#types = [
+#  "aws_ebs_volume",
+#  "aws_ebs_default_kms_key",
+#  "aws_db_instance",
+#  "aws_rds_cluster"
+#]
 
 attributes = [
   "kms_key_id",
@@ -102,9 +102,9 @@ attributes = [
 deny[reason] {
   walk(tfplan.configuration.root_module, [path, value])
   attr := attributes[_]
-  type := types[_]
+#  type := types[_]
   value.mode == "managed"
-  value.type == type
+#  value.type == type
   obj := json.filter(value.expressions,[attr])
   walk(obj, [opath, ovalue])
   kms_key := eval_expression(tfplan, ovalue)
