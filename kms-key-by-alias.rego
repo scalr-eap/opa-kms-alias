@@ -47,7 +47,7 @@ deny[reason] {
   "aws_s3_bucket" == value.type
   kms_key := eval_expression(tfplan, value.expressions.server_side_encryption_configuration[_].rule[_].apply_server_side_encryption_by_default[_].kms_master_key_id)
   not startswith(kms_key, "data.aws_kms_key.")
-  reason := sprintf("KMS Master key ID '%s' not derived from data source!",[kms_key])
+  reason := sprintf("aws_s3_bucket.%s :: KMS Master key ID '%s' not derived from data source!",[value.name,kms_key])
 }
 
 #deny[reason] {
@@ -65,5 +65,5 @@ deny[reason] {
   key_alias := eval_expression(tfplan, value.expressions.key_id)
   key_name := trim_prefix(key_alias, "alias/")
   not contains(allowed_kms_keys, key_name)
-  reason := sprintf("KMS Master key ID '%s' not not in permitted list",[key_alias])
+  reason := sprintf("data.aws_kms_key.%s :: KMS Master key ID '%s' not not in permitted list",[value.name, key_alias])
 }
