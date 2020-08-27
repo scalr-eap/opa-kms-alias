@@ -4,17 +4,18 @@
 
 # KMS is used in many AWS services. This policy will attempt to deal with all cases
 
-# AWS CloudTrail
-# Amazon DynamoDB
+# AWS CloudTrail : DONE
+# AWS Cloudwatch : DONE
+# Amazon DynamoDB : DONE
 # Amazon Elastic Block Store (Amazon EBS) : DONE
-# Amazon Elastic Transcoder
-# Amazon EMR
-# Amazon Redshift
-# Amazon Relational Database Service (Amazon RDS)
-# AWS Secrets Manager
-# Amazon Simple Email Service (Amazon SES)
+# Amazon Elastic Transcoder : DONE
+# Amazon EMR : DONE
+# Amazon Redshift : DONE
+# Amazon Relational Database Service (Amazon RDS) : DONE
+# AWS Secrets Manager : DONE
+# Amazon Simple Email Service (Amazon SES) : DONE
 # Amazon Simple Storage Service (Amazon S3) : DONE
-# AWS Systems Manager Parameter Store
+# AWS Systems Manager Parameter Store : 
 # Amazon WorkMail
 # Amazon WorkSpaces
 
@@ -89,29 +90,64 @@ deny[reason] {
 # This could be done without type[] using the assumption that these attribute name are only used for KMS keys, but A) that is a risk and B) may have performance issue. 
 # This appraoch is more explicit and therefore clearer.
 
-types = [
-  "aws_ebs_volume",
-  "aws_ebs_default_kms_key",
-  "aws_db_instance",
-  "aws_rds_cluster",
-  "aws_rds_cluster_instance"
-]
-
 attributes = [
-  "kms_key_id",
-  "key_arn",
-  "performance_insights_kms_key_id"
+  "aws_ebs_volume:kms_key_id",
+  "aws_ebs_default_kms_key:key_arn",
+  "aws_db_instance:kms_key_id",
+  "aws_db_instance:performance_insights_kms_key_id",
+  "aws_rds_cluster:kms_key_id",
+  "aws_rds_cluster_instance:performance_insights_kms_key_id",
+  "aws_cloudtrail:kms_key_id",
+  "aws_cloudwatch_log_group:kms_key_id",
+  "aws_dynamodb_table:kms_key_arn",
+  "aws_elastictranscoder_pipeline:aws_kms_key_arn",
+  "aws_redshift_cluster:kms_key_id",
+  "aws_redshift_snapshot_copy_grant:kms_key_id",
+  "aws_secretsmanager_secret:kms_key_id",
+  "aws_ssm_parameter:key_id"
 ]
 
 deny[reason] {
   walk(tfplan.configuration.root_module, [path, value])
   attr := attributes[_]
-  type := types[_]
+  attr_s := split(attr,":")
   value.mode == "managed"
-  value.type == type
-  obj := json.filter(value.expressions,[attr])
+  value.type == attr_s[0]
+  obj := json.filter(value.expressions,[attr_s[1]])
   walk(obj, [opath, ovalue])
   kms_key := eval_expression(tfplan, ovalue)
   not startswith(kms_key, "data.aws_kms_key.")
-  reason := sprintf("%s.%s :: %s '%s' not derived from data source!",[value.type,value.name,attr,kms_key])
+  reason := sprintf("%s.%s :: %s '%s' not derived from data source!",[value.type,value.name,attr_s[1],kms_key])
 }
+
+#---------
+# EMR
+
+# Extract ARN from the JSON config. This may be a UUID or alias/name arn.
+
+deny[reason] {
+  walk(tfplan.configuration.root_module, [path, value])
+  value.mode == "managed"
+  value.type == "aws_emr_security_configuration"
+  config := eval_expression(tfplan, value.expressions.configuration)
+  arn := regex.find_n("arn:aws:kms:[a-z0-9-:/_]*", config, 1)
+  arn_bits := split(arn[0],":")
+  id := arn_bits[count(arn_bits)-1]
+  key_name := trim_prefix(id, "alias/")
+  not contains(allowed_kms_keys, key_name)
+  reason := sprintf("%s.%s :: configuration disc encryption key '%s' not from permitted list",[value.type,value.name,key_name])
+}
+
+#-----
+# SES
+
+# Tests for a S3 encryption referencing a KMS key. This MUST be a data source.
+deny[reason] {
+  walk(tfplan.configuration.root_module, [path, value])
+  value.mode == "managed"
+  value.type == "aws_s3_bucket"
+  kms_key := eval_expression(tfplan, value.expressions.s3_action.kms_key_arn)
+  not startswith(kms_key, "data.aws_kms_key.")
+  reason := sprintf("%s.%s :: s3_action KMS Master key ID '%s' not derived from data source!",[value.type,value.name,kms_key])
+}
+
