@@ -15,9 +15,8 @@
 # AWS Secrets Manager : DONE
 # Amazon Simple Email Service (Amazon SES) : DONE
 # Amazon Simple Storage Service (Amazon S3) : DONE
-# AWS Systems Manager Parameter Store : 
-# Amazon WorkMail
-# Amazon WorkSpaces
+# AWS Systems Manager Parameter Store : DONE
+
 
 package terraform
 
@@ -145,8 +144,21 @@ deny[reason] {
 deny[reason] {
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
-  value.type == "aws_s3_bucket"
+  value.type == "aws_ses_receipt_rule"
   kms_key := eval_expression(tfplan, value.expressions.s3_action.kms_key_arn)
+  not startswith(kms_key, "data.aws_kms_key.")
+  reason := sprintf("%s.%s :: s3_action KMS Master key ID '%s' not derived from data source!",[value.type,value.name,kms_key])
+}
+
+#------
+# SSM
+
+# Tests for a S3 encryption referencing a KMS key. This MUST be a data source.
+deny[reason] {
+  walk(tfplan.configuration.root_module, [path, value])
+  value.mode == "managed"
+  value.type == "aws_ssm_resource_data_sync"
+  kms_key := eval_expression(tfplan, value.expressions.s3_destination.kms_key_arn)
   not startswith(kms_key, "data.aws_kms_key.")
   reason := sprintf("%s.%s :: s3_action KMS Master key ID '%s' not derived from data source!",[value.type,value.name,kms_key])
 }
