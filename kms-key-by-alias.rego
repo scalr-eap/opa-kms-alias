@@ -6,7 +6,7 @@
 
 # AWS CloudTrail
 # Amazon DynamoDB
-# Amazon Elastic Block Store (Amazon EBS)
+# Amazon Elastic Block Store (Amazon EBS) : DONE
 # Amazon Elastic Transcoder
 # Amazon EMR
 # Amazon Redshift
@@ -58,7 +58,7 @@ deny[reason] {
   key_alias := eval_expression(tfplan, value.expressions.key_id)
   key_name := trim_prefix(key_alias, "alias/")
   not contains(allowed_kms_keys, key_name)
-  reason := sprintf("%s.%s :: KMS Master key ID '%s' not not in permitted list",[value.type,value.name, key_alias])
+  reason := sprintf("%s.%s :: KMS key name '%s' not in permitted list",[value.type,value.name, key_alias])
 }
 
 #---------------
@@ -88,12 +88,14 @@ deny[reason] {
 
 types = [
   "aws_ebs_volume",
-  "aws_ebs_default_kms_key"
+  "aws_ebs_default_kms_key",
+  "aws_db_instance"
 ]
 
 attributes = [
   "kms_key_id",
-  "key_arn"
+  "key_arn",
+  "performance_insights_kms_key_id"
 ]
 
 deny[reason] {
@@ -104,7 +106,6 @@ deny[reason] {
   value.type == type
   obj := json.filter(value.expressions,[attr])
   walk(obj, [opath, ovalue])
-  #kms_key := "dummy"
   kms_key := eval_expression(tfplan, ovalue)
   not startswith(kms_key, "data.aws_kms_key.")
   reason := sprintf("%s.%s :: %s '%s' not derived from data source!",[value.type,value.name,attr,kms_key])
