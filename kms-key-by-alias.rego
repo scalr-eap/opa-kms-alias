@@ -52,6 +52,7 @@ eval_expression(plan, expr) = constant_value {
 
 # Tests that the key_id used in the data source is in the allowed list.
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "data"
   value.type == "aws_kms_key"
@@ -65,6 +66,7 @@ deny[reason] {
 # S3 Buckets
 # Tests for a replication configuration rule referencing a KMS key. This MUST be a data source.
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
   value.type == "aws_s3_bucket"
@@ -75,6 +77,7 @@ deny[reason] {
 
 # Tests for a server side encryption rule referencing a KMS key. This MUST be a data source.
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
   value.type == "aws_s3_bucket"
@@ -105,6 +108,7 @@ attributes = [
 ]
 
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   attr := attributes[_]
   attr_s := split(attr,":")
@@ -123,6 +127,7 @@ deny[reason] {
 # Extract ARN from the JSON config. This may be a UUID or alias/name arn.
 
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
   value.type == "aws_emr_security_configuration"
@@ -140,6 +145,7 @@ deny[reason] {
 
 # Tests for a S3 encryption referencing a KMS key. This MUST be a data source.
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
   value.type == "aws_ses_receipt_rule"
@@ -153,6 +159,7 @@ deny[reason] {
 
 # Tests for a S3 encryption referencing a KMS key. This MUST be a data source.
 deny[reason] {
+  is_destroy == false
   walk(tfplan.configuration.root_module, [path, value])
   value.mode == "managed"
   value.type == "aws_ssm_resource_data_sync"
