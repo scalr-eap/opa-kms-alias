@@ -85,13 +85,17 @@ deny[reason] {
 
 #---------------
 # EBS, RDS
+# Search for attributes in the list and check they are referencing data sources
+# This could be done without type[] using the assumption that these attribute name are only used for KMS keys, but A) that is a risk and B) may have performance issue. 
+# This appraoch is more explicit and therefore clearer.
 
-#types = [
-#  "aws_ebs_volume",
-#  "aws_ebs_default_kms_key",
-#  "aws_db_instance",
-#  "aws_rds_cluster"
-#]
+types = [
+  "aws_ebs_volume",
+  "aws_ebs_default_kms_key",
+  "aws_db_instance",
+  "aws_rds_cluster",
+  "aws_rds_cluster_instance"
+]
 
 attributes = [
   "kms_key_id",
@@ -102,9 +106,9 @@ attributes = [
 deny[reason] {
   walk(tfplan.configuration.root_module, [path, value])
   attr := attributes[_]
-#  type := types[_]
+  type := types[_]
   value.mode == "managed"
-#  value.type == type
+  value.type == type
   obj := json.filter(value.expressions,[attr])
   walk(obj, [opath, ovalue])
   kms_key := eval_expression(tfplan, ovalue)
