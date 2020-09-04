@@ -1,6 +1,6 @@
 version = "v1"
 
-policy "kms-key-by-alias" {
+policy "enforce_kms_key_names" {
   enabled           = true
   enforcement_level = "hard-mandatory"
 }
