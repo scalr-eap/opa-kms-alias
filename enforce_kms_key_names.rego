@@ -67,7 +67,7 @@ eval_key_name(plan, res) = constant_value {
 #--------------------
 
 # Tests that the key_id used in the data source is in the allowed list.
-deny[reason] {
+dave[reason] {
   tfrun.is_destroy == false
   r := tfplan.configuration.root_module.resources[_]
   r.mode == "data"
