@@ -179,3 +179,12 @@ deny[reason] {
   reason := sprintf("%-40s :: s3_action KMS Master key ID '%s' not derived from data source!",[concat(".",[r.type,r.name]),kms_key])
 }
 
+friday[dave] {
+  2 == 2
+  dave := "WTF!"
+}
+
+default bill = false
+bill {
+ 1 == 2
+}
