@@ -24,7 +24,7 @@ import input.tfplan as tfplan
 import input.tfrun as tfrun
 
 allowed_kms_keys = [
-  "pg-kms-key",
+  "pg-kms-keyx",
   "alias-1"
 ]
 
@@ -177,14 +177,4 @@ deny[reason] {
   kms_key := eval_expression(tfplan, r.expressions.s3_destination.kms_key_arn)
   not startswith(kms_key, "data.aws_kms_key.")
   reason := sprintf("%-40s :: s3_action KMS Master key ID '%s' not derived from data source!",[concat(".",[r.type,r.name]),kms_key])
-}
-
-friday[dave] {
-  2 == 2
-  dave := "WTF!"
-}
-
-default bill = false
-bill {
- 2 == 2
 }
