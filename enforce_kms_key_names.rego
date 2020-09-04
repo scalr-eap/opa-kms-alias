@@ -186,5 +186,5 @@ friday[dave] {
 
 default bill = false
 bill {
- 1 == 2
+ 2 == 2
 }
